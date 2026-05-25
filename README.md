@@ -1,4 +1,4 @@
-# 🏫 SakuBK / CareSDQ - Sistem Informasi Kuesioner SDQ Siswa
+# 🏫 EduSafeSDQ - Sistem Informasi Kuesioner SDQ Siswa
 
 Aplikasi web berbasis **Laravel 12** yang dirancang untuk membantu sekolah melakukan skrining awal mengenai kekuatan dan kesulitan perilaku siswa menggunakan metode **SDQ (Strengths and Difficulties Questionnaire)**. 
 
