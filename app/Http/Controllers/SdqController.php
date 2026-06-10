@@ -37,12 +37,12 @@ class SdqController extends Controller
             $jawaban[$r] = 2 - $jawaban[$r];
         }
 
-        // Hitung subskala
-        $emotional     = $jawaban[3]+$jawaban[8]+$jawaban[13]+$jawaban[16]+$jawaban[24];
+        // Hitung subskala baru sesuai pemetaan
+        $emotional     = $jawaban[1]+$jawaban[3]+$jawaban[13]+$jawaban[16]+$jawaban[24];
         $conduct       = $jawaban[5]+$jawaban[7]+$jawaban[12]+$jawaban[18]+$jawaban[22];
         $hyperactivity = $jawaban[2]+$jawaban[10]+$jawaban[15]+$jawaban[21]+$jawaban[25];
-        $peer          = $jawaban[6]+$jawaban[11]+$jawaban[14]+$jawaban[19]+$jawaban[23];
-        $prosocial     = $jawaban[1]+$jawaban[4]+$jawaban[9]+$jawaban[17]+$jawaban[20];
+        $peer          = $jawaban[6]+$jawaban[8]+$jawaban[11]+$jawaban[14]+$jawaban[19];
+        $prosocial     = $jawaban[4]+$jawaban[9]+$jawaban[17]+$jawaban[20]+$jawaban[23];
 
         $total = $emotional + $conduct + $hyperactivity + $peer;
 
@@ -52,10 +52,10 @@ class SdqController extends Controller
         } elseif ($total <= 19) {
             $label = 'Borderline';
         } else {
-            $label = 'Abnormal';
+            $label = 'Abnormal'; // Di UI/Laravel tetap sebut Abnormal demi kompatibilitas
         }
 
-        // Panggil Flask /sdq (Jalur 2 — Naive Bayes Samuel)
+        // Panggil Flask /sdq (Jalur 2 — Naive Bayes Vietnam SDQ)
         try {
             $response = Http::timeout(5)->post('http://127.0.0.1:5000/sdq', [
                 'emotional'     => $emotional,
@@ -63,17 +63,22 @@ class SdqController extends Controller
                 'conduct'       => $conduct,
                 'peer'          => $peer,
                 'prosocial'     => $prosocial,
-                'total'         => $total,
             ]);
             $samuel = $response->json();
         } catch (\Exception $e) {
             $samuel = [
-                'depresi'         => 'Tidak tersedia',
-                'kecemasan'       => 'Tidak tersedia',
-                'kesejahteraan'   => 'Tidak tersedia',
-                'gejala_negatif'  => 'Tidak tersedia',
-                'risiko_ai'       => 'Tidak tersedia',
-                'prob_berisiko'   => null,
+                'total_skor'        => $total,
+                'hasil_sdq_baku'    => $label === 'Abnormal' ? 'High Risk' : $label,
+                'hasil_naive_bayes' => 'Tidak tersedia',
+                'probabilitas'      => [
+                    'Normal'     => 0.0,
+                    'Borderline' => 0.0,
+                    'High Risk'  => 0.0,
+                ],
+                'keputusan_akhir'   => $label === 'Abnormal' ? 'High Risk' : $label,
+                'tindakan'          => $label === 'Normal' ? 'Tidak perlu tindakan khusus' : ($label === 'Borderline' ? 'Guru BK perlu memonitor siswa ini' : 'Tindakan segera diperlukan'),
+                'akurasi_model'     => 0.0,
+                'cv_score'          => 0.0,
             ];
         }
 
@@ -93,15 +98,25 @@ class SdqController extends Controller
         $data['total_kesulitan']      = $total;
         $data['hasil_label']          = $label;
 
-        // Label detail (informatif)
-        $data['samuel_depresi']       = $samuel['depresi'] ?? null;
-        $data['samuel_kecemasan']     = $samuel['kecemasan'] ?? null;
-        $data['samuel_kesejahteraan'] = $samuel['kesejahteraan'] ?? null;
-        $data['samuel_kelompok']      = $samuel['gejala_negatif'] ?? null;
+        // Mapping model lama (samuel) - diisi null/default untuk record baru
+        $data['samuel_depresi']       = null;
+        $data['samuel_kecemasan']     = null;
+        $data['samuel_kesejahteraan'] = null;
+        $data['samuel_kelompok']      = null;
 
-        // Hasil Naive Bayes (baru)
-        $data['risiko_ai']            = $samuel['risiko_ai'] ?? null;
-        $data['prob_berisiko']        = $samuel['prob_berisiko'] ?? null;
+        // Kolom model baru (Vietnam SDQ)
+        $data['hasil_naive_bayes']    = $samuel['hasil_naive_bayes'] ?? null;
+        $data['prob_normal']          = $samuel['probabilitas']['Normal'] ?? null;
+        $data['prob_borderline']      = $samuel['probabilitas']['Borderline'] ?? null;
+        $data['prob_high_risk']       = $samuel['probabilitas']['High Risk'] ?? null;
+        $data['keputusan_akhir']      = $samuel['keputusan_akhir'] ?? null;
+        $data['tindakan']             = $samuel['tindakan'] ?? null;
+        $data['akurasi_model']        = $samuel['akurasi_model'] ?? null;
+        $data['cv_score']             = $samuel['cv_score'] ?? null;
+
+        // Kompatibilitas filter Guru BK lama
+        $data['risiko_ai']            = ($data['hasil_naive_bayes'] === 'Borderline' || $data['hasil_naive_bayes'] === 'High Risk') ? 'YES' : 'NO';
+        $data['prob_berisiko']        = (float) (($data['prob_borderline'] ?? 0) + ($data['prob_high_risk'] ?? 0));
 
         HasilSdq::create($data);
 

@@ -21,5 +21,9 @@ class HasilSdq extends Model
         'samuel_depresi','samuel_kecemasan',
         'samuel_kesejahteraan','samuel_kelompok',
         'risiko_ai','prob_berisiko',
+        'hasil_naive_bayes',
+        'prob_normal','prob_borderline','prob_high_risk',
+        'keputusan_akhir','tindakan',
+        'akurasi_model','cv_score',
     ];
 }

@@ -128,147 +128,39 @@
 
         @if($hasilTerakhir)
 
-        {{-- Banner Risiko AI --}}
-        @if(($hasilTerakhir->risiko_ai ?? '') === 'YES')
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 animate-pulse">
-            <span class="material-symbols-outlined text-amber-600 flex-shrink-0" style="font-variation-settings:'FILL' 1">warning</span>
-            <span class="text-sm font-bold text-amber-800">Terdeteksi pola risiko tersembunyi — Guru BK akan menghubungi kamu</span>
-        </div>
-        @endif
+        {{-- Hasil Utama --}}
+        @php
+            $finalLabel = $hasilTerakhir->keputusan_akhir ?? $hasilTerakhir->hasil_label;
+            $displayLabel = $finalLabel === 'High Risk' ? 'Abnormal' : $finalLabel;
 
-        {{-- Profile Card --}}
-        <div class="bg-white rounded-2xl p-5 md:p-8 shadow-sm flex flex-col sm:flex-row gap-4 md:gap-6 items-start sm:items-center">
-            <div class="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl md:text-2xl flex-shrink-0">
-                {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-x-8 md:gap-x-12 gap-y-3 md:gap-y-4 flex-1 w-full">
-                <div>
-                    <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Nama Lengkap</p>
-                    <p class="text-base md:text-lg font-bold text-slate-800 truncate">{{ Auth::user()->name }}</p>
-                </div>
-                <div>
-                    <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Kelas</p>
-                    <p class="text-base md:text-lg font-bold text-slate-800">{{ Auth::user()->kelas }}</p>
-                </div>
-                <div class="col-span-2 md:col-span-1">
-                    <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Tanggal Skrining</p>
-                    <p class="text-base md:text-lg font-bold text-slate-800">{{ $hasilTerakhir->created_at->format('d M Y') }}</p>
-                </div>
-            </div>
-        </div>
+            $sdqColor = match($displayLabel) {
+                'Normal'     => 'bg-emerald-50 text-emerald-700 border-emerald-200 border-t-emerald-500',
+                'Borderline' => 'bg-amber-50 text-amber-700 border-amber-200 border-t-amber-500',
+                'Abnormal', 'High Risk' => 'bg-red-50 text-red-700 border-red-200 border-t-red-500',
+                default      => 'bg-slate-50 text-slate-600 border-slate-200 border-t-slate-500'
+            };
+            $sdqIcon = match($displayLabel) {
+                'Normal'     => 'check_circle',
+                'Borderline' => 'warning',
+                'Abnormal', 'High Risk' => 'error',
+                default      => 'info'
+            };
+            $deskripsiText = match($displayLabel) {
+                'Normal'     => 'Hasil skrining terakhir Anda menunjukkan kondisi yang normal dan stabil. Tetap pertahankan dan selalu jaga kesehatan emosi serta hubungan sosial Anda sehari-hari.',
+                'Borderline' => 'Hasil skrining terakhir Anda menunjukkan kondisi borderline. Guru BK akan memantau perkembangan Anda dan siap membantu jika Anda memerlukan dukungan.',
+                'Abnormal', 'High Risk' => 'Hasil skrining terakhir Anda menunjukkan kondisi yang memerlukan perhatian lebih. Guru BK akan segera menghubungi Anda untuk mendampingi dan memberikan dukungan terbaik.',
+                default      => '-'
+            };
+        @endphp
 
-        {{-- 2 Kolom: SDQ + AI — stack di mobile --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6">
-
-            {{-- Hasil SDQ --}}
-            <div class="bg-white rounded-2xl p-5 md:p-8 shadow-sm space-y-5 md:space-y-6">
-                <div class="flex justify-between items-start">
-                    <h3 class="text-sm md:text-base font-bold text-slate-800">Hasil Skoring SDQ</h3>
-                    @php
-                        $sdqColor = match($hasilTerakhir->hasil_label) {
-                            'Normal'     => 'bg-emerald-100 text-emerald-700',
-                            'Borderline' => 'bg-amber-100 text-amber-700',
-                            'Abnormal'   => 'bg-red-100 text-red-700',
-                            default      => 'bg-slate-100 text-slate-600'
-                        };
-                    @endphp
-                    <span class="px-3 py-1 rounded-full text-xs font-bold {{ $sdqColor }}">
-                        {{ $hasilTerakhir->hasil_label }}
-                    </span>
-                </div>
-
-                <div class="flex items-baseline gap-2">
-                    <span class="text-3xl md:text-4xl font-bold text-blue-600">{{ $hasilTerakhir->total_kesulitan }}</span>
-                    <span class="text-slate-400 text-sm">Skor Total SDQ</span>
-                </div>
-
-                @php
-                    $bars = [
-                        ['label' => 'Gejala Emosional',    'val' => $hasilTerakhir->skor_emotional,     'max' => 10, 'color' => 'bg-blue-500'],
-                        ['label' => 'Masalah Perilaku',    'val' => $hasilTerakhir->skor_conduct,       'max' => 10, 'color' => 'bg-violet-500'],
-                        ['label' => 'Hiperaktivitas',      'val' => $hasilTerakhir->skor_hyperactivity, 'max' => 10, 'color' => 'bg-amber-500'],
-                        ['label' => 'Masalah Teman Sebaya','val' => $hasilTerakhir->skor_peer,          'max' => 10, 'color' => 'bg-orange-500'],
-                        ['label' => 'Perilaku Prososial',  'val' => $hasilTerakhir->skor_prosocial,     'max' => 10, 'color' => 'bg-emerald-500'],
-                    ];
-                @endphp
-
-                <div class="space-y-3 md:space-y-4 pt-1">
-                    @foreach($bars as $bar)
-                    <div class="space-y-1.5">
-                        <div class="flex justify-between text-xs md:text-sm">
-                            <span class="text-slate-500">{{ $bar['label'] }}</span>
-                            <span class="font-bold text-slate-800">{{ $bar['val'] }}/{{ $bar['max'] }}</span>
-                        </div>
-                        <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                            <div class="h-full {{ $bar['color'] }} rounded-full" style="width: {{ ($bar['val']/$bar['max'])*100 }}%"></div>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-
-            {{-- Analisis AI --}}
-            <div class="bg-blue-50 rounded-2xl p-5 md:p-8 shadow-sm border border-blue-100 flex flex-col">
-                <div class="flex justify-between items-center mb-3 md:mb-4 text-blue-600">
-                    <div class="flex items-center gap-2 md:gap-3">
-                        <span class="material-symbols-outlined text-xl md:text-2xl">psychology</span>
-                        <h3 class="text-sm md:text-base font-bold">Analisis AI — Pola Tersembunyi</h3>
-                    </div>
-                    <span class="material-symbols-outlined opacity-60">auto_awesome</span>
-                </div>
-                <p class="text-xs text-slate-500 mb-4 md:mb-6">Analisis mendalam berbasis pola data 553 responden</p>
-
-                <div class="space-y-3 md:space-y-4 mb-5 md:mb-6">
-                    {{-- Risiko AI --}}
-                    <div class="flex items-start gap-3 md:gap-4">
-                        @if(($hasilTerakhir->risiko_ai ?? '') === 'YES')
-                            <div class="mt-1.5 h-3 w-3 rounded-full bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.6)] flex-shrink-0"></div>
-                            <div>
-                                <p class="font-bold text-slate-800 text-sm md:text-base">Terdeteksi Risiko Tersembunyi</p>
-                                <p class="text-xs text-slate-500">Probabilitas risiko: <span class="font-bold text-red-600">{{ $hasilTerakhir->prob_berisiko ?? 0 }}%</span></p>
-                            </div>
-                        @else
-                            <div class="mt-1.5 h-3 w-3 rounded-full bg-emerald-400 flex-shrink-0"></div>
-                            <div>
-                                <p class="font-bold text-slate-800 text-sm md:text-base">Tidak Ada Risiko Tersembunyi</p>
-                                <p class="text-xs text-slate-500">Probabilitas aman: <span class="font-bold text-emerald-600">{{ 100 - ($hasilTerakhir->prob_berisiko ?? 0) }}%</span></p>
-                            </div>
-                        @endif
-                    </div>
-
-                    {{-- Label Detail --}}
-                    @php
-                        $details = [
-                            ['label' => 'Depresi',        'val' => $hasilTerakhir->samuel_depresi ?? '-'],
-                            ['label' => 'Kecemasan',      'val' => $hasilTerakhir->samuel_kecemasan ?? '-'],
-                            ['label' => 'Kesejahteraan',  'val' => $hasilTerakhir->samuel_kesejahteraan ?? '-'],
-                            ['label' => 'Gejala Negatif', 'val' => $hasilTerakhir->samuel_kelompok ?? '-'],
-                        ];
-                    @endphp
-                    @foreach($details as $d)
-                    @php
-                        $dc = match($d['val']) {
-                            'Tinggi','Kurang','Berisiko Tinggi' => 'text-red-600 font-bold',
-                            'Sedang','Cukup','Perlu Perhatian'  => 'text-amber-600 font-bold',
-                            default => 'text-emerald-600 font-bold'
-                        };
-                    @endphp
-                    <div class="flex justify-between text-xs md:text-sm">
-                        <span class="text-slate-500">{{ $d['label'] }}</span>
-                        <span class="{{ $dc }}">{{ $d['val'] }}</span>
-                    </div>
-                    @endforeach
-                </div>
-
-                <div class="mt-auto p-3 md:p-4 rounded-xl border border-blue-200 bg-white">
-                    <p class="text-xs italic text-slate-500">
-                        @if(($hasilTerakhir->risiko_ai ?? '') === 'YES')
-                            Hasil AI mendeteksi pola yang perlu perhatian. Guru BK akan menindaklanjuti hasil ini.
-                        @else
-                            Hasil analisis AI menunjukkan tidak ada pola risiko yang signifikan. Tetap jaga kesehatan mentalmu!
-                        @endif
-                    </p>
-                </div>
+        <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 border-t-4 {{ $sdqColor }} flex flex-col items-center text-center">
+            <span class="material-symbols-outlined text-5xl mb-3 {{ $displayLabel === 'Normal' ? 'text-emerald-500' : ($displayLabel === 'Borderline' ? 'text-amber-500' : 'text-red-500') }}">{{ $sdqIcon }}</span>
+            <h3 class="text-sm font-bold text-slate-400 mb-1">Status Skrining Terakhir</h3>
+            <p class="text-3xl font-extrabold text-slate-800 mb-3">{{ $displayLabel }}</p>
+            <p class="text-sm text-slate-500 max-w-md leading-relaxed mb-4">{{ $deskripsiText }}</p>
+            <div class="text-xs text-slate-400 p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">info</span>
+                Rincian analitik lengkap disimpan pada Counselor Portal untuk evaluasi bimbingan konseling.
             </div>
         </div>
 
@@ -280,42 +172,32 @@
                 <p class="text-xs text-slate-400 mt-0.5">Semua hasil skrining kamu sebelumnya</p>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm" style="min-width:500px">
+                <table class="w-full text-sm" style="min-width:400px">
                     <thead>
                         <tr class="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
                             <th class="px-4 md:px-5 py-3 text-left font-semibold">Tanggal</th>
-                            <th class="px-4 md:px-5 py-3 text-left font-semibold">Total Skor</th>
-                            <th class="px-4 md:px-5 py-3 text-left font-semibold">Hasil SDQ</th>
-                            <th class="px-4 md:px-5 py-3 text-left font-semibold">Risiko AI</th>
+                            <th class="px-4 md:px-5 py-3 text-left font-semibold">Hasil Diagnosis</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-50">
                         @foreach($riwayat as $r)
                         @php
-                            $rc = match($r->hasil_label) {
+                            $histLabel = $r->keputusan_akhir ?? $r->hasil_label;
+                            $dispHistLabel = $histLabel === 'High Risk' ? 'Abnormal' : $histLabel;
+                            $rc = match($dispHistLabel) {
                                 'Normal'     => 'bg-emerald-100 text-emerald-700',
                                 'Borderline' => 'bg-amber-100 text-amber-700',
-                                'Abnormal'   => 'bg-red-100 text-red-700',
+                                'Abnormal', 'High Risk' => 'bg-red-100 text-red-700',
                                 default      => 'bg-slate-100 text-slate-600'
                             };
                         @endphp
                         <tr class="hover:bg-slate-50/60 {{ $loop->first ? 'bg-blue-50/30' : '' }}">
                             <td class="px-4 md:px-5 py-3.5 text-slate-500 text-xs">
                                 {{ $r->created_at->format('d M Y H:i') }}
-                                @if($loop->first) <span class="ml-1 text-blue-600 font-bold">(Terbaru)</span> @endif
-                            </td>
-                            <td class="px-4 md:px-5 py-3.5 font-bold text-sm">{{ $r->total_kesulitan }}/40</td>
-                            <td class="px-4 md:px-5 py-3.5">
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $rc }}">{{ $r->hasil_label }}</span>
+                                @if($loop->first) <span class="ml-1.5 text-blue-600 font-bold">(Terbaru)</span> @endif
                             </td>
                             <td class="px-4 md:px-5 py-3.5">
-                                @if(($r->risiko_ai ?? '') === 'YES')
-                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">⚠ Berisiko</span>
-                                @elseif(($r->risiko_ai ?? '') === 'NO')
-                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">✓ Aman</span>
-                                @else
-                                    <span class="text-slate-400 text-xs">-</span>
-                                @endif
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $rc }}">{{ $dispHistLabel }}</span>
                             </td>
                         </tr>
                         @endforeach

@@ -170,9 +170,8 @@
                             <th class="px-5 py-3 text-left font-semibold">Kelas</th>
                             <th class="px-5 py-3 text-left font-semibold">Skor SDQ</th>
                             <th class="px-5 py-3 text-left font-semibold">Status SDQ</th>
-                            <th class="px-5 py-3 text-left font-semibold">Depresi</th>
-                            <th class="px-5 py-3 text-left font-semibold">Kecemasan</th>
-                            <th class="px-5 py-3 text-left font-semibold">Kesejahteraan</th>
+                            <th class="px-5 py-3 text-left font-semibold">Naive Bayes</th>
+                            <th class="px-5 py-3 text-left font-semibold">Keputusan Akhir</th>
                             <th class="px-5 py-3 text-center font-semibold">Risiko AI</th>
                             <th class="px-5 py-3 text-right font-semibold">Aksi</th>
                         </tr>
@@ -182,31 +181,19 @@
                         @php
                             $isRisikoAI = ($s->risiko_ai ?? '') === 'YES';
                             $isNormalTapiAI = $isRisikoAI && $s->hasil_label === 'Normal'; // anomali sejati
-
+ 
                             // warna baris
                             if ($isNormalTapiAI)   $rowClass = 'row-anomali';
                             elseif ($isRisikoAI)   $rowClass = 'row-risiko-ai';
                             else                   $rowClass = 'hover:bg-slate-50/60 transition-colors';
-
+ 
                             $sdqColor = match($s->hasil_label) {
                                 'Normal'     => 'bg-emerald-100 text-emerald-700',
                                 'Borderline' => 'bg-amber-100 text-amber-700',
                                 'Abnormal'   => 'bg-red-100 text-red-700',
                                 default      => 'bg-slate-100 text-slate-500'
                             };
-                            $depColor = match($s->samuel_depresi ?? '') {
-                                'Rendah' => 'text-emerald-600', 'Sedang' => 'text-amber-600',
-                                'Tinggi' => 'text-red-600', default => 'text-slate-400'
-                            };
-                            $anxColor = match($s->samuel_kecemasan ?? '') {
-                                'Rendah' => 'text-emerald-600', 'Sedang' => 'text-amber-600',
-                                'Tinggi' => 'text-red-600', default => 'text-slate-400'
-                            };
-                            $welColor = match($s->samuel_kesejahteraan ?? '') {
-                                'Baik' => 'text-emerald-600', 'Cukup' => 'text-amber-600',
-                                'Kurang' => 'text-red-600', default => 'text-slate-400'
-                            };
-
+ 
                             // warna chip skor subskala
                             $chipColor = function($val) {
                                 if ($val >= 7) return 'bg-red-100 text-red-700';
@@ -219,13 +206,13 @@
                             <td class="px-5 py-4 text-slate-400 text-xs">
                                 {{ ($hasilSdq->currentPage() - 1) * $hasilSdq->perPage() + $i + 1 }}
                             </td>
-
+ 
                             {{-- Tanggal --}}
                             <td class="px-5 py-4 text-slate-500 text-xs whitespace-nowrap">
                                 {{ $s->created_at->format('d M Y') }}<br>
                                 <span class="text-slate-300">{{ $s->created_at->format('H:i') }}</span>
                             </td>
-
+ 
                             {{-- Nama --}}
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-2">
@@ -245,10 +232,10 @@
                                     </div>
                                 </div>
                             </td>
-
+ 
                             {{-- Kelas --}}
                             <td class="px-5 py-4 text-slate-500">{{ $s->kelas }}</td>
-
+ 
                             {{-- Skor SDQ breakdown --}}
                             <td class="px-5 py-4">
                                 <div class="flex flex-wrap gap-1">
@@ -260,21 +247,46 @@
                                 </div>
                                 <p class="text-xs text-slate-400 mt-1">Total: <strong class="text-slate-600">{{ $s->total_kesulitan }}/40</strong></p>
                             </td>
-
+ 
                             {{-- Status SDQ --}}
                             <td class="px-5 py-4">
                                 <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $sdqColor }}">{{ $s->hasil_label }}</span>
                             </td>
+ 
+                            {{-- Naive Bayes --}}
+                            <td class="px-5 py-4 text-xs">
+                                @if($s->hasil_naive_bayes)
+                                    @php
+                                        $nbColor = match($s->hasil_naive_bayes) {
+                                            'Normal'     => 'bg-emerald-100 text-emerald-700',
+                                            'Borderline' => 'bg-amber-100 text-amber-700',
+                                            'High Risk'  => 'bg-red-100 text-red-700',
+                                            default      => 'bg-slate-100 text-slate-600'
+                                        };
+                                    @endphp
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $nbColor }}">{{ $s->hasil_naive_bayes }}</span>
+                                @else
+                                    <span class="text-slate-400">-</span>
+                                @endif
+                            </td>
 
-                            {{-- Depresi --}}
-                            <td class="px-5 py-4 text-xs font-semibold {{ $depColor }}">{{ $s->samuel_depresi ?? '-' }}</td>
-
-                            {{-- Kecemasan --}}
-                            <td class="px-5 py-4 text-xs font-semibold {{ $anxColor }}">{{ $s->samuel_kecemasan ?? '-' }}</td>
-
-                            {{-- Kesejahteraan --}}
-                            <td class="px-5 py-4 text-xs font-semibold {{ $welColor }}">{{ $s->samuel_kesejahteraan ?? '-' }}</td>
-
+                            {{-- Keputusan Akhir --}}
+                            <td class="px-5 py-4 text-xs">
+                                @if($s->keputusan_akhir)
+                                    @php
+                                        $kaColor = match($s->keputusan_akhir) {
+                                            'Normal'     => 'bg-emerald-100 text-emerald-700',
+                                            'Borderline' => 'bg-amber-100 text-amber-700',
+                                            'High Risk'  => 'bg-red-100 text-red-700',
+                                            default      => 'bg-slate-100 text-slate-600'
+                                        };
+                                    @endphp
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $kaColor }}">{{ $s->keputusan_akhir }}</span>
+                                @else
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $sdqColor }}">{{ $s->hasil_label }}</span>
+                                @endif
+                            </td>
+ 
                             {{-- Risiko AI --}}
                             <td class="px-5 py-4 text-center">
                                 @if($isRisikoAI)

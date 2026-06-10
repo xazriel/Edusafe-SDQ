@@ -90,13 +90,13 @@
                 ['label' => 'Prososial',       'key' => 'skor_prosocial',   'val' => $s->skor_prosocial,   'max' => 10, 'icon' => 'favorite'],
             ];
 
-            // Pertanyaan SDQ per subskala
+            // Pertanyaan SDQ per subskala (terbaru)
             $pertanyaanMap = [
-                'Emosional'     => [3,8,13,16,24],
+                'Emosional'     => [1,3,13,16,24],
                 'Perilaku'      => [5,7,12,18,22],
                 'Hiperaktivitas'=> [2,10,15,21,25],
-                'Teman Sebaya'  => [6,11,14,19,23],
-                'Prososial'     => [1,4,9,17,20],
+                'Teman Sebaya'  => [6,8,11,14,19],
+                'Prososial'     => [4,9,17,20,23],
             ];
 
             $labelJawaban = ['Tidak Benar', 'Agak Benar', 'Benar'];
@@ -182,45 +182,107 @@
 
             {{-- Analisis AI --}}
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
-                <h4 class="text-sm font-bold text-slate-800">Analisis AI (SAMUEL)</h4>
-                @if(!$s->samuel_depresi && !$s->samuel_kecemasan && !$s->samuel_kesejahteraan)
-                    <div class="flex flex-col items-center justify-center py-8 text-center text-slate-400">
-                        <span class="material-symbols-outlined text-3xl mb-2">psychology_alt</span>
-                        <p class="text-sm">Analisis AI belum tersedia untuk data ini</p>
+                @if($s->keputusan_akhir)
+                    <h4 class="text-sm font-bold text-slate-800">Analisis AI (Gaussian Naive Bayes)</h4>
+                    @php
+                        $nbCol = match($s->hasil_naive_bayes) {
+                            'Normal'     => 'emerald',
+                            'Borderline' => 'amber',
+                            'High Risk'  => 'red',
+                            default      => 'slate'
+                        };
+                        $kaCol = match($s->keputusan_akhir) {
+                            'Normal'     => 'emerald',
+                            'Borderline' => 'amber',
+                            'High Risk'  => 'red',
+                            default      => 'slate'
+                        };
+                    @endphp
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                        <span class="text-xs text-slate-500">Prediksi Naive Bayes</span>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-{{ $nbCol }}-100 text-{{ $nbCol }}-700">{{ $s->hasil_naive_bayes }}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                        <span class="text-xs text-slate-500">Keputusan Akhir (OR)</span>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-{{ $kaCol }}-100 text-{{ $kaCol }}-700">{{ $s->keputusan_akhir }}</span>
+                    </div>
+
+                    {{-- Probabilitas --}}
+                    <div class="space-y-2 pt-2">
+                        <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wide">Probabilitas Kelas</h5>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100 text-center">
+                                <p class="text-[10px] text-emerald-600 font-bold mb-1">Normal</p>
+                                <p class="text-sm font-extrabold text-emerald-700">{{ $s->prob_normal ?? 0 }}%</p>
+                            </div>
+                            <div class="bg-amber-50/50 rounded-xl p-3 border border-amber-100 text-center">
+                                <p class="text-[10px] text-amber-600 font-bold mb-1">Borderline</p>
+                                <p class="text-sm font-extrabold text-amber-700">{{ $s->prob_borderline ?? 0 }}%</p>
+                            </div>
+                            <div class="bg-red-50/50 rounded-xl p-3 border border-red-100 text-center">
+                                <p class="text-[10px] text-red-600 font-bold mb-1">High Risk</p>
+                                <p class="text-sm font-extrabold text-red-700">{{ $s->prob_high_risk ?? 0 }}%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Info Model --}}
+                    <div class="pt-2 border-t border-slate-100 space-y-1.5 text-xs text-slate-400">
+                        <div class="flex justify-between">
+                            <span>Dataset Model</span>
+                            <span class="font-medium text-slate-600">Vietnam SDQ (n=1833)</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Akurasi Model</span>
+                            <span class="font-medium text-slate-600">{{ $s->akurasi_model ?? 0 }}%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Skor CV 5-Fold</span>
+                            <span class="font-medium text-slate-600">{{ $s->cv_score ?? 0 }}%</span>
+                        </div>
                     </div>
                 @else
-                @php
-                    $aiFields = [
-                        ['label' => 'Depresi',        'val' => $s->samuel_depresi,        'icon' => 'sentiment_dissatisfied',
-                         'color' => match($s->samuel_depresi) { 'Rendah'=>'emerald','Sedang'=>'amber','Tinggi'=>'red', default=>'slate' }],
-                        ['label' => 'Kecemasan',      'val' => $s->samuel_kecemasan,      'icon' => 'anxiety',
-                         'color' => match($s->samuel_kecemasan) { 'Rendah'=>'emerald','Sedang'=>'amber','Tinggi'=>'red', default=>'slate' }],
-                        ['label' => 'Kesejahteraan',  'val' => $s->samuel_kesejahteraan,  'icon' => 'spa',
-                         'color' => match($s->samuel_kesejahteraan) { 'Baik'=>'emerald','Cukup'=>'amber','Kurang'=>'red', default=>'slate' }],
-                    ];
-                @endphp
-                @foreach($aiFields as $f)
-                @php $c = $f['color']; @endphp
-                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                    <div class="flex items-center gap-2 text-sm text-slate-600">
-                        <span class="material-symbols-outlined text-{{ $c }}-500" style="font-size:18px">{{ $f['icon'] }}</span>
-                        {{ $f['label'] }}
+                    {{-- Fallback lama --}}
+                    <h4 class="text-sm font-bold text-slate-800">Analisis AI (SAMUEL)</h4>
+                    @if(!$s->samuel_depresi && !$s->samuel_kecemasan && !$s->samuel_kesejahteraan)
+                        <div class="flex flex-col items-center justify-center py-8 text-center text-slate-400">
+                            <span class="material-symbols-outlined text-3xl mb-2">psychology_alt</span>
+                            <p class="text-sm">Analisis AI belum tersedia untuk data ini</p>
+                        </div>
+                    @else
+                    @php
+                        $aiFields = [
+                            ['label' => 'Depresi',        'val' => $s->samuel_depresi,        'icon' => 'sentiment_dissatisfied',
+                             'color' => match($s->samuel_depresi) { 'Rendah'=>'emerald','Sedang'=>'amber','Tinggi'=>'red', default=>'slate' }],
+                            ['label' => 'Kecemasan',      'val' => $s->samuel_kecemasan,      'icon' => 'anxiety',
+                             'color' => match($s->samuel_kecemasan) { 'Rendah'=>'emerald','Sedang'=>'amber','Tinggi'=>'red', default=>'slate' }],
+                            ['label' => 'Kesejahteraan',  'val' => $s->samuel_kesejahteraan,  'icon' => 'spa',
+                             'color' => match($s->samuel_kesejahteraan) { 'Baik'=>'emerald','Cukup'=>'amber','Kurang'=>'red', default=>'slate' }],
+                        ];
+                    @endphp
+                    @foreach($aiFields as $f)
+                    @php $c = $f['color']; @endphp
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                        <div class="flex items-center gap-2 text-sm text-slate-600">
+                            <span class="material-symbols-outlined text-{{ $c }}-500" style="font-size:18px">{{ $f['icon'] }}</span>
+                            {{ $f['label'] }}
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-{{ $c }}-100 text-{{ $c }}-700">
+                            {{ $f['val'] ?? '-' }}
+                        </span>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-{{ $c }}-100 text-{{ $c }}-700">
-                        {{ $f['val'] ?? '-' }}
-                    </span>
-                </div>
-                @endforeach
+                    @endforeach
 
-                @if($s->prob_berisiko)
-                <div class="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
-                    <span class="text-sm text-slate-600 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-purple-400" style="font-size:18px">data_usage</span>
-                        Probabilitas Berisiko
-                    </span>
-                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">{{ $s->prob_berisiko }}%</span>
-                </div>
-                @endif
+                    @if($s->prob_berisiko)
+                    <div class="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
+                        <span class="text-sm text-slate-600 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-purple-400" style="font-size:18px">data_usage</span>
+                            Probabilitas Berisiko
+                        </span>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">{{ $s->prob_berisiko }}%</span>
+                    </div>
+                    @endif
+                    @endif
                 @endif
             </div>
         </div>
@@ -232,20 +294,34 @@
                 Rekomendasi Tindak Lanjut
             </h4>
             <div class="space-y-2 text-sm text-slate-600">
-                @if($isNormalTapiAI)
-                    <p class="flex items-start gap-2"><span class="text-amber-500 font-bold mt-0.5">→</span> Lakukan wawancara individual untuk menggali kondisi sebenarnya (kemungkinan faking good).</p>
-                    <p class="flex items-start gap-2"><span class="text-amber-500 font-bold mt-0.5">→</span> Libatkan orang tua / wali untuk konfirmasi perilaku siswa di rumah.</p>
-                    <p class="flex items-start gap-2"><span class="text-amber-500 font-bold mt-0.5">→</span> Lakukan skrining ulang dalam 2–4 minggu ke depan.</p>
-                @elseif($s->hasil_label === 'Abnormal')
-                    <p class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">→</span> Segera lakukan konseling individual intensif.</p>
-                    <p class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">→</span> Koordinasi dengan orang tua dan bila perlu rujuk ke psikolog/psikiater.</p>
-                    <p class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">→</span> Pantau perkembangan siswa secara berkala setiap minggu.</p>
-                @elseif($s->hasil_label === 'Borderline')
-                    <p class="flex items-start gap-2"><span class="text-amber-500 font-bold mt-0.5">→</span> Jadwalkan sesi konseling preventif dalam waktu dekat.</p>
-                    <p class="flex items-start gap-2"><span class="text-amber-500 font-bold mt-0.5">→</span> Monitor perkembangan siswa dan lakukan skrining ulang dalam 1 bulan.</p>
+                @if($s->tindakan)
+                    <p class="flex items-start gap-2"><span class="text-blue-500 font-bold mt-0.5">→</span> <strong>Rekomendasi Sistem:</strong> {{ $s->tindakan }}</p>
+                    @if($s->keputusan_akhir === 'High Risk')
+                        <p class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">→</span> Segera lakukan konseling bimbingan konseling (BK) individual intensif.</p>
+                        <p class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">→</span> Koordinasikan dengan orang tua/wali kelas dan pertimbangkan rujukan ke ahli profesional.</p>
+                    @elseif($s->keputusan_akhir === 'Borderline')
+                        <p class="flex items-start gap-2"><span class="text-amber-500 font-bold mt-0.5">→</span> Jadwalkan pemantauan berkala dan konseling preventif ringan.</p>
+                        <p class="flex items-start gap-2"><span class="text-amber-500 font-bold mt-0.5">→</span> Koordinasikan dengan guru mata bimbingan konseling untuk perkembangan di kelas.</p>
+                    @else
+                        <p class="flex items-start gap-2"><span class="text-emerald-500 font-bold mt-0.5">→</span> Lanjutkan pemantauan berkala bimbingan konseling normal.</p>
+                    @endif
                 @else
-                    <p class="flex items-start gap-2"><span class="text-emerald-500 font-bold mt-0.5">→</span> Siswa dalam kondisi normal. Lanjutkan pemantauan rutin.</p>
-                    <p class="flex items-start gap-2"><span class="text-emerald-500 font-bold mt-0.5">→</span> Jadwalkan skrining berikutnya sesuai jadwal reguler sekolah.</p>
+                    {{-- Fallback lama --}}
+                    @if($isNormalTapiAI)
+                        <p class="flex items-start gap-2"><span class="text-amber-500 font-bold mt-0.5">→</span> Lakukan wawancara individual untuk menggali kondisi sebenarnya (kemungkinan faking good).</p>
+                        <p class="flex items-start gap-2"><span class="text-amber-500 font-bold mt-0.5">→</span> Libatkan orang tua / wali untuk konfirmasi perilaku siswa di rumah.</p>
+                        <p class="flex items-start gap-2"><span class="text-amber-500 font-bold mt-0.5">→</span> Lakukan skrining ulang dalam 2–4 minggu ke depan.</p>
+                    @elseif($s->hasil_label === 'Abnormal')
+                        <p class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">→</span> Segera lakukan konseling individual intensif.</p>
+                        <p class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">→</span> Koordinasi dengan orang tua dan bila perlu rujuk ke psikolog/psikiater.</p>
+                        <p class="flex items-start gap-2"><span class="text-red-500 font-bold mt-0.5">→</span> Pantau perkembangan siswa secara berkala setiap minggu.</p>
+                    @elseif($s->hasil_label === 'Borderline')
+                        <p class="flex items-start gap-2"><span class="text-amber-500 font-bold mt-0.5">→</span> Jadwalkan sesi konseling preventif dalam waktu dekat.</p>
+                        <p class="flex items-start gap-2"><span class="text-amber-500 font-bold mt-0.5">→</span> Monitor perkembangan siswa dan lakukan skrining ulang dalam 1 bulan.</p>
+                    @else
+                        <p class="flex items-start gap-2"><span class="text-emerald-500 font-bold mt-0.5">→</span> Siswa dalam kondisi normal. Lanjutkan pemantauan rutin.</p>
+                        <p class="flex items-start gap-2"><span class="text-emerald-500 font-bold mt-0.5">→</span> Jadwalkan skrining berikutnya sesuai jadwal reguler sekolah.</p>
+                    @endif
                 @endif
             </div>
         </div>

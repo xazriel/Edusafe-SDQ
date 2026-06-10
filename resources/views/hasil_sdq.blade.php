@@ -25,91 +25,38 @@
         </div>
 
         @php
-            $kelas = match($label) {
-                'Normal'     => ['bg-emerald-50 border-emerald-200', 'text-emerald-700', '✅'],
-                'Borderline' => ['bg-amber-50 border-amber-200',     'text-amber-700',   '⚠️'],
-                'Abnormal'   => ['bg-red-50 border-red-200',         'text-red-700',     '🔴'],
-                default      => ['bg-slate-50 border-slate-200',     'text-slate-700',   '📋'],
+            $finalLabel = $samuel['keputusan_akhir'] ?? $label;
+            // Map "High Risk" to "Abnormal" for student friendliness
+            $displayLabel = $finalLabel === 'High Risk' ? 'Abnormal' : $finalLabel;
+
+            $kelas = match($displayLabel) {
+                'Normal'     => ['bg-emerald-50 border-emerald-200 border-t-emerald-500 text-emerald-700', 'text-emerald-700', '✅'],
+                'Borderline' => ['bg-amber-50 border-amber-200 border-t-amber-500 text-amber-700',   'text-amber-700',   '⚠️'],
+                'Abnormal', 'High Risk' => ['bg-red-50 border-red-200 border-t-red-500 text-red-700',         'text-red-700',     '🔴'],
+                default      => ['bg-slate-50 border-slate-200 border-t-slate-500 text-slate-700',   'text-slate-700',   '📋'],
             };
-            $deskripsi = match($label) {
-                'Normal'     => 'Tidak ditemukan indikasi masalah yang signifikan.',
-                'Borderline' => 'Terdapat beberapa indikasi yang perlu dipantau lebih lanjut.',
-                'Abnormal'   => 'Terdapat indikasi masalah yang perlu penanganan profesional.',
+            $deskripsi = match($displayLabel) {
+                'Normal'     => 'Hasil menunjukkan kondisi kesehatan mental Anda dalam keadaan baik. Tetap pertahankan dan selalu jaga kesehatan emosi serta hubungan sosial Anda sehari-hari.',
+                'Borderline' => 'Hasil menunjukkan adanya indikasi ringan yang perlu dipantau. Jangan ragu untuk berbagi cerita atau berkonsultasi secara santai dengan Guru BK jika merasa lelah atau cemas.',
+                'Abnormal', 'High Risk'   => 'Hasil menunjukkan adanya hal-hal yang perlu mendapat perhatian lebih. Guru BK akan segera menghubungi Anda untuk mendampingi dan memberikan dukungan terbaik secara personal.',
                 default      => ''
             };
         @endphp
 
         {{-- Hasil Utama --}}
-        <div class="bg-white rounded-2xl shadow-sm p-8 text-center border-t-4
-            {{ $label === 'Normal' ? 'border-emerald-500' : ($label === 'Borderline' ? 'border-amber-500' : 'border-red-500') }}">
-            <div class="text-4xl mb-3">{{ $kelas[2] }}</div>
-            <h2 class="text-2xl font-bold {{ $kelas[1] }} mb-2">{{ $label }}</h2>
-            <p class="text-slate-500 text-sm">{{ $deskripsi }}</p>
-            <div class="mt-4 inline-block bg-slate-100 rounded-xl px-5 py-2">
-                <span class="text-slate-500 text-sm">Total Skor: </span>
-                <span class="font-bold text-slate-800 text-lg">{{ $total }}/40</span>
-            </div>
-        </div>
-
-        {{-- Rincian Subskala --}}
-        <div class="bg-white rounded-2xl shadow-sm p-7">
-            <h3 class="text-base font-bold text-slate-800 mb-5">Rincian Skor per Subskala</h3>
-            @php
-                $subskalas = [
-                    ['nama' => 'Gejala Emosional',     'skor' => $emotional,     'color' => 'bg-blue-500'],
-                    ['nama' => 'Masalah Perilaku',      'skor' => $conduct,       'color' => 'bg-violet-500'],
-                    ['nama' => 'Hiperaktivitas',        'skor' => $hyperactivity, 'color' => 'bg-amber-500'],
-                    ['nama' => 'Masalah Teman Sebaya',  'skor' => $peer,          'color' => 'bg-orange-500'],
-                    ['nama' => 'Perilaku Prososial',    'skor' => $prosocial,     'color' => 'bg-emerald-500'],
-                ];
-            @endphp
-            <div class="space-y-4">
-                @foreach($subskalas as $s)
-                <div>
-                    <div class="flex justify-between text-sm mb-1.5">
-                        <span class="text-slate-500">{{ $s['nama'] }}</span>
-                        <span class="font-bold text-slate-800">{{ $s['skor'] }}/10</span>
-                    </div>
-                    <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full {{ $s['color'] }} rounded-full" style="width: {{ ($s['skor']/10)*100 }}%"></div>
-                    </div>
+        <div class="bg-white rounded-2xl shadow-sm p-10 text-center border-t-4 {{ $kelas[0] }}">
+            <div class="text-5xl mb-4">{{ $kelas[2] }}</div>
+            <h2 class="text-3xl font-extrabold text-slate-800 mb-3">
+                Status: <span class="{{ $kelas[1] }}">{{ $displayLabel }}</span>
+            </h2>
+            <div class="max-w-md mx-auto">
+                <p class="text-slate-600 text-sm leading-relaxed mb-6">{{ $deskripsi }}</p>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center gap-2 text-slate-500 text-xs">
+                    <span class="material-symbols-outlined text-base">info</span>
+                    Detail analisis lengkap telah dikirimkan ke Guru BK Anda untuk evaluasi lebih lanjut.
                 </div>
-                @endforeach
             </div>
         </div>
-
-        {{-- Analisis Samuel (jika ada) --}}
-        @if(isset($samuel) && ($samuel['depresi'] ?? '') !== 'Tidak tersedia')
-        <div class="bg-blue-50 rounded-2xl shadow-sm p-7 border border-blue-100">
-            <div class="flex items-center gap-2 mb-5">
-                <span class="material-symbols-outlined text-blue-600">psychology</span>
-                <h3 class="text-base font-bold text-slate-800">Analisis AI</h3>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                @php
-                    $items = [
-                        ['label' => 'Depresi',        'val' => $samuel['depresi'] ?? '-'],
-                        ['label' => 'Kecemasan',      'val' => $samuel['kecemasan'] ?? '-'],
-                        ['label' => 'Kesejahteraan',  'val' => $samuel['kesejahteraan'] ?? '-'],
-                        ['label' => 'Risiko AI',      'val' => $samuel['risiko_ai'] ?? '-'],
-                    ];
-                @endphp
-                @foreach($items as $item)
-                @php
-                    $vc = match($item['val']) {
-                        'Tinggi','Kurang','YES' => 'text-red-600 font-bold',
-                        'Sedang','Cukup'        => 'text-amber-600 font-bold',
-                        default                 => 'text-emerald-600 font-bold'
-                    };
-                @endphp
-                <div class="bg-white rounded-xl p-4 border border-blue-100">
-                    <p class="text-xs text-slate-400 mb-1">{{ $item['label'] }}</p>
-                    <p class="text-sm {{ $vc }}">{{ $item['val'] }}</p>
-                </div>
-                @endforeach
-            </div>
-        </div>
-        @endif
 
         {{-- Tombol --}}
         <div class="flex gap-3">

@@ -356,14 +356,13 @@
                             <th class="px-4 md:px-5 py-3 text-left font-semibold">Hiperaktivitas</th>
                             <th class="px-4 md:px-5 py-3 text-left font-semibold">Teman Sebaya</th>
                             <th class="px-4 md:px-5 py-3 text-left font-semibold">Prososial</th>
-                            <th class="px-4 md:px-5 py-3 text-left font-semibold">Depresi</th>
-                            <th class="px-4 md:px-5 py-3 text-left font-semibold">Kecemasan</th>
-                            <th class="px-4 md:px-5 py-3 text-left font-semibold">Kesejahteraan</th>
-                            <th class="px-4 md:px-5 py-3 text-left font-semibold">Gejala Negatif</th>
-                            <th class="px-4 md:px-5 py-3 text-left font-semibold">Risiko AI</th>
-                            <th class="px-4 md:px-5 py-3 text-left font-semibold">Tanggal</th>
-                            <th class="px-4 md:px-5 py-3 text-left font-semibold">Poin</th>
-                            <th class="px-4 md:px-5 py-3 text-left font-semibold">Kesimpulan</th>
+                            <th class="px-4 md:px-5 py-3 text-left font-semibold">Naive Bayes</th>
+                             <th class="px-4 md:px-5 py-3 text-left font-semibold">Keputusan Akhir</th>
+                             <th class="px-4 md:px-5 py-3 text-left font-semibold">Rekomendasi Tindakan</th>
+                             <th class="px-4 md:px-5 py-3 text-left font-semibold">Risiko AI</th>
+                             <th class="px-4 md:px-5 py-3 text-left font-semibold">Tanggal</th>
+                             <th class="px-4 md:px-5 py-3 text-left font-semibold">Poin</th>
+                             <th class="px-4 md:px-5 py-3 text-left font-semibold">Kesimpulan</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-50">
@@ -376,49 +375,37 @@
                                 'Abnormal'   => 'bg-red-100 text-red-700',
                                 default      => 'bg-slate-100 text-slate-600'
                             };
-                            $depColor = match($s->samuel_depresi ?? '') {
-                                'Rendah' => 'bg-emerald-100 text-emerald-700',
-                                'Sedang' => 'bg-amber-100 text-amber-700',
-                                'Tinggi' => 'bg-red-100 text-red-700',
-                                default  => 'bg-slate-100 text-slate-400'
-                            };
-                            $anxColor = match($s->samuel_kecemasan ?? '') {
-                                'Rendah' => 'bg-emerald-100 text-emerald-700',
-                                'Sedang' => 'bg-amber-100 text-amber-700',
-                                'Tinggi' => 'bg-red-100 text-red-700',
-                                default  => 'bg-slate-100 text-slate-400'
-                            };
-                            $welColor = match($s->samuel_kesejahteraan ?? '') {
-                                'Baik'   => 'bg-emerald-100 text-emerald-700',
-                                'Cukup'  => 'bg-amber-100 text-amber-700',
-                                'Kurang' => 'bg-red-100 text-red-700',
-                                default  => 'bg-slate-100 text-slate-400'
-                            };
-                            $kelColor = match($s->samuel_kelompok ?? '') {
-                                'Rendah' => 'bg-emerald-100 text-emerald-700',
-                                'Sedang' => 'bg-amber-100 text-amber-700',
-                                'Tinggi' => 'bg-red-100 text-red-700',
-                                default  => 'bg-slate-100 text-slate-400'
-                            };
                             $poin = 0;
-                            $poin += match($s->hasil_label) { 'Borderline'=>1,'Abnormal'=>2,default=>0 };
-                            $poin += match($s->samuel_depresi ?? '') { 'Sedang'=>1,'Tinggi'=>2,default=>0 };
-                            $poin += match($s->samuel_kecemasan ?? '') { 'Sedang'=>1,'Tinggi'=>2,default=>0 };
-                            $poin += match($s->samuel_kesejahteraan ?? '') { 'Cukup'=>1,'Kurang'=>2,default=>0 };
-                            $poin += match($s->samuel_kelompok ?? '') { 'Sedang'=>1,'Tinggi'=>2,default=>0 };
-                            $poin += $isRisikoAI ? 2 : 0;
+                            if ($s->keputusan_akhir) {
+                                $poin += match($s->keputusan_akhir) { 'Borderline'=>2,'High Risk'=>4, default=>0 };
+                                $poin += $s->hasil_naive_bayes === 'High Risk' ? 2 : ($s->hasil_naive_bayes === 'Borderline' ? 1 : 0);
+                            } else {
+                                $poin += match($s->hasil_label) { 'Borderline'=>1,'Abnormal'=>2,default=>0 };
+                                $poin += match($s->samuel_depresi ?? '') { 'Sedang'=>1,'Tinggi'=>2,default=>0 };
+                                $poin += match($s->samuel_kecemasan ?? '') { 'Sedang'=>1,'Tinggi'=>2,default=>0 };
+                                $poin += match($s->samuel_kesejahteraan ?? '') { 'Cukup'=>1,'Kurang'=>2,default=>0 };
+                                $poin += match($s->samuel_kelompok ?? '') { 'Sedang'=>1,'Tinggi'=>2,default=>0 };
+                                $poin += $isRisikoAI ? 2 : 0;
+                            }
                             $faktor = [];
-                            if ($isRisikoAI) $faktor[] = ['t'=>'Risiko AI','c'=>'bg-purple-100 text-purple-700'];
-                            if (($s->samuel_depresi??'') === 'Tinggi')          $faktor[] = ['t'=>'Depresi Tinggi','c'=>'bg-red-100 text-red-700'];
-                            elseif (($s->samuel_depresi??'') === 'Sedang')      $faktor[] = ['t'=>'Depresi Sedang','c'=>'bg-amber-100 text-amber-700'];
-                            if (($s->samuel_kecemasan??'') === 'Tinggi')        $faktor[] = ['t'=>'Kecemasan Tinggi','c'=>'bg-red-100 text-red-700'];
-                            elseif (($s->samuel_kecemasan??'') === 'Sedang')    $faktor[] = ['t'=>'Kecemasan Sedang','c'=>'bg-amber-100 text-amber-700'];
-                            if (($s->samuel_kesejahteraan??'') === 'Kurang')    $faktor[] = ['t'=>'Wellbeing Kurang','c'=>'bg-red-100 text-red-700'];
-                            elseif (($s->samuel_kesejahteraan??'') === 'Cukup') $faktor[] = ['t'=>'Wellbeing Cukup','c'=>'bg-amber-100 text-amber-700'];
+                            if ($s->keputusan_akhir) {
+                                if ($s->hasil_naive_bayes === 'High Risk') $faktor[] = ['t'=>'NB High Risk','c'=>'bg-red-100 text-red-700'];
+                                elseif ($s->hasil_naive_bayes === 'Borderline') $faktor[] = ['t'=>'NB Borderline','c'=>'bg-amber-100 text-amber-700'];
+                                if ($s->hasil_label === 'Abnormal') $faktor[] = ['t'=>'Baku Abnormal','c'=>'bg-red-100 text-red-700'];
+                                elseif ($s->hasil_label === 'Borderline') $faktor[] = ['t'=>'Baku Borderline','c'=>'bg-amber-100 text-amber-700'];
+                            } else {
+                                if ($isRisikoAI) $faktor[] = ['t'=>'Risiko AI','c'=>'bg-purple-100 text-purple-700'];
+                                if (($s->samuel_depresi??'') === 'Tinggi')          $faktor[] = ['t'=>'Depresi Tinggi','c'=>'bg-red-100 text-red-700'];
+                                elseif (($s->samuel_depresi??'') === 'Sedang')      $faktor[] = ['t'=>'Depresi Sedang','c'=>'bg-amber-100 text-amber-700'];
+                                if (($s->samuel_kecemasan??'') === 'Tinggi')        $faktor[] = ['t'=>'Kecemasan Tinggi','c'=>'bg-red-100 text-red-700'];
+                                elseif (($s->samuel_kecemasan??'') === 'Sedang')    $faktor[] = ['t'=>'Kecemasan Sedang','c'=>'bg-amber-100 text-amber-700'];
+                                if (($s->samuel_kesejahteraan??'') === 'Kurang')    $faktor[] = ['t'=>'Wellbeing Kurang','c'=>'bg-red-100 text-red-700'];
+                                elseif (($s->samuel_kesejahteraan??'') === 'Cukup') $faktor[] = ['t'=>'Wellbeing Cukup','c'=>'bg-amber-100 text-amber-700'];
+                            }
                             [$overall,$overallColor] = match(true) {
                                 $poin <= 2 => ['Baik',      'bg-emerald-100 text-emerald-700'],
-                                $poin <= 5 => ['Waspada',   'bg-amber-100 text-amber-700'],
-                                $poin <= 8 => ['Perhatian', 'bg-orange-100 text-orange-700'],
+                                $poin <= 4 => ['Waspada',   'bg-amber-100 text-amber-700'],
+                                $poin <= 6 => ['Perhatian', 'bg-orange-100 text-orange-700'],
                                 default    => ['Prioritas', 'bg-red-100 text-red-700'],
                             };
                         @endphp
@@ -442,16 +429,45 @@
                             <td class="px-4 md:px-5 py-3.5 text-slate-600">{{ $s->skor_peer }}</td>
                             <td class="px-4 md:px-5 py-3.5 text-slate-600">{{ $s->skor_prosocial }}</td>
                             <td class="px-4 md:px-5 py-3.5">
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $depColor }}">{{ $s->samuel_depresi ?? '-' }}</span>
+                                @if($s->hasil_naive_bayes)
+                                    @php
+                                        $nbColor = match($s->hasil_naive_bayes) {
+                                            'Normal'     => 'bg-emerald-100 text-emerald-700',
+                                            'Borderline' => 'bg-amber-100 text-amber-700',
+                                            'High Risk'  => 'bg-red-100 text-red-700',
+                                            default      => 'bg-slate-100 text-slate-600'
+                                        };
+                                    @endphp
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $nbColor }}">{{ $s->hasil_naive_bayes }}</span>
+                                @else
+                                    <span class="text-xs text-slate-400">-</span>
+                                @endif
                             </td>
                             <td class="px-4 md:px-5 py-3.5">
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $anxColor }}">{{ $s->samuel_kecemasan ?? '-' }}</span>
+                                @if($s->keputusan_akhir)
+                                    @php
+                                        $kaColor = match($s->keputusan_akhir) {
+                                            'Normal'     => 'bg-emerald-100 text-emerald-700',
+                                            'Borderline' => 'bg-amber-100 text-amber-700',
+                                            'High Risk'  => 'bg-red-100 text-red-700',
+                                            default      => 'bg-slate-100 text-slate-600'
+                                        };
+                                    @endphp
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $kaColor }}">{{ $s->keputusan_akhir }}</span>
+                                @else
+                                    @php
+                                        $kaColor = match($s->hasil_label) {
+                                            'Normal'     => 'bg-emerald-100 text-emerald-700',
+                                            'Borderline' => 'bg-amber-100 text-amber-700',
+                                            'Abnormal'   => 'bg-red-100 text-red-700',
+                                            default      => 'bg-slate-100 text-slate-600'
+                                        };
+                                    @endphp
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $kaColor }}">{{ $s->hasil_label }}</span>
+                                @endif
                             </td>
-                            <td class="px-4 md:px-5 py-3.5">
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $welColor }}">{{ $s->samuel_kesejahteraan ?? '-' }}</span>
-                            </td>
-                            <td class="px-4 md:px-5 py-3.5">
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $kelColor }}">{{ $s->samuel_kelompok ?? '-' }}</span>
+                            <td class="px-4 md:px-5 py-3.5 text-xs text-slate-600 max-w-[200px] truncate" title="{{ $s->tindakan }}">
+                                {{ $s->tindakan ?? ($s->risiko_ai === 'YES' ? 'Bimbingan Konseling' : 'Pemantauan Rutin') }}
                             </td>
                             <td class="px-4 md:px-5 py-3.5">
                                 @if($isRisikoAI)

@@ -43,7 +43,6 @@
         {{-- Form --}}
         <form method="POST" action="/sdq/submit" class="space-y-5">
             @csrf
-
             @php
             $soal = [
                 1  => "Saya berusaha bersikap baik kepada orang lain",
@@ -72,45 +71,36 @@
                 24 => "Saya memiliki banyak ketakutan",
                 25 => "Saya menyelesaikan pekerjaan sampai selesai",
             ];
-            $subskala = [
-                'Perilaku Prososial'    => ['nomor' => [1,4,9,17,20],  'icon' => 'favorite',      'color' => 'text-emerald-600', 'bg' => 'bg-emerald-50',  'border' => 'border-emerald-200'],
-                'Hiperaktivitas'        => ['nomor' => [2,10,15,21,25], 'icon' => 'bolt',          'color' => 'text-amber-600',   'bg' => 'bg-amber-50',    'border' => 'border-amber-200'],
-                'Gejala Emosional'      => ['nomor' => [3,8,13,16,24],  'icon' => 'sentiment_sad', 'color' => 'text-blue-600',    'bg' => 'bg-blue-50',     'border' => 'border-blue-200'],
-                'Masalah Teman Sebaya'  => ['nomor' => [6,11,14,19,23], 'icon' => 'group',         'color' => 'text-orange-600',  'bg' => 'bg-orange-50',   'border' => 'border-orange-200'],
-                'Masalah Perilaku'      => ['nomor' => [5,7,12,18,22],  'icon' => 'warning',       'color' => 'text-violet-600',  'bg' => 'bg-violet-50',   'border' => 'border-violet-200'],
-            ];
             @endphp
 
-            @foreach($subskala as $nama => $info)
             <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-                {{-- Subskala Header --}}
-                <div class="flex items-center gap-2 px-6 py-4 {{ $info['bg'] }} border-b {{ $info['border'] }}">
-                    <span class="material-symbols-outlined {{ $info['color'] }}" style="font-size:18px">{{ $info['icon'] }}</span>
-                    <span class="text-sm font-bold {{ $info['color'] }}">{{ $nama }}</span>
+                {{-- Header --}}
+                <div class="flex items-center gap-2 px-6 py-4 bg-blue-50 border-b border-blue-100">
+                    <span class="material-symbols-outlined text-blue-600" style="font-size:18px">assignment</span>
+                    <span class="text-sm font-bold text-blue-600">Daftar Pertanyaan</span>
                 </div>
 
                 {{-- Soal --}}
-                <div class="divide-y divide-slate-50">
-                    @foreach($info['nomor'] as $n)
-                    <div class="px-6 py-4">
+                <div class="divide-y divide-slate-100">
+                    @for($n = 1; $n <= 25; $n++)
+                    <div class="px-6 py-5 hover:bg-slate-50/50 transition-colors">
                         <p class="text-sm text-slate-700 mb-3 font-medium">
-                            <span class="text-slate-400 mr-1">{{ $n }}.</span>
+                            <span class="text-slate-400 mr-1.5 font-bold">B{{ $n }}.</span>
                             {{ $soal[$n] }}
                         </p>
-                        <div class="flex gap-4">
-                            @foreach(['0' => 'Tidak Benar', '1' => 'Agak Benar', '2' => 'Benar'] as $val => $teks)
-                            <label class="flex items-center gap-2 cursor-pointer group">
+                        <div class="flex flex-wrap gap-6">
+                            @foreach(['0' => 'Tidak Benar', '1' => 'Agak Benar', '2' => 'Tentu Benar'] as $val => $teks)
+                            <label class="flex items-center gap-2.5 cursor-pointer group">
                                 <input type="radio" name="sdq{{ $n }}" value="{{ $val }}" required
-                                    class="mt-0.5">
-                                <span class="text-xs text-slate-500 group-hover:text-slate-800 transition-colors">{{ $teks }}</span>
+                                    class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer">
+                                <span class="text-sm text-slate-500 group-hover:text-slate-800 transition-colors cursor-pointer">{{ $teks }}</span>
                             </label>
                             @endforeach
                         </div>
                     </div>
-                    @endforeach
+                    @endfor
                 </div>
             </div>
-            @endforeach
 
             {{-- Submit --}}
             <button type="submit"
